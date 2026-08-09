@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: budget-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: budget-backend
+  template:
+    metadata:
+      labels:
+        app: budget-backend
+    spec:
+      initContainers:
+      - name: migrate
+        image: eduardgohl/budget-tracker-backend:latest
+        command: ["python", "manage.py", "migrate", "--noinput"]
+        env:
+        - name: GOOGLE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: GOOGLE_SECRET
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: GOOGLE_CLIENT_ID
+        - name: CALLBACK_URL
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: CALLBACK_URL
+        - name: DJANGO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: DJANGO_SECRET_KEY
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_HOST
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: POSTGRES_HOST
+        - name: POSTGRES_PORT
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: POSTGRES_PORT
+      containers:
+      - name: backend
+        image: eduardgohl/budget-tracker-backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DJANGO_ALLOWED_HOSTS
+          # "*" is fine for local minikube testing; restrict this in real deployments.
+          value: "*"
+        - name: GOOGLE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: GOOGLE_SECRET
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: GOOGLE_CLIENT_ID
+        - name: CALLBACK_URL
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: CALLBACK_URL
+        - name: DJANGO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: DJANGO_SECRET_KEY
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_HOST
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: POSTGRES_HOST
+        - name: POSTGRES_PORT
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: POSTGRES_PORT
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # Name must be "backend" - the frontend's nginx config has
+  # "proxy_pass http://backend:8000" baked in at image build time.
+  name: backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+  selector:
+    app: budget-backend
