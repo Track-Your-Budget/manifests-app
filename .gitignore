@@ -1,1 +1,3 @@
 app-manifests/k8s/backend-secret.yaml
+k8s/backend-secret.yaml
+*secret.yaml
