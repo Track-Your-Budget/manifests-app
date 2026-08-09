@@ -14,7 +14,7 @@ spec:
     spec:
       initContainers:
       - name: migrate
-        image: eduardgohl/budget-tracker-backend:latest
+        image: eduardgohl/budget-tracker-backend:30
         command: ["python", "manage.py", "migrate", "--noinput"]
         env:
         - name: GOOGLE_SECRET
@@ -64,7 +64,7 @@ spec:
               key: POSTGRES_PORT
       containers:
       - name: backend
-        image: eduardgohl/budget-tracker-backend:latest
+        image: eduardgohl/budget-tracker-backend:30
         ports:
         - containerPort: 8000
         env:

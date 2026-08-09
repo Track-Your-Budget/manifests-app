@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: eduardgohl/budget-tracker-frontend:latest
+        image: eduardgohl/budget-tracker-frontend:30
         ports:
         - containerPort: 80
 ---
