@@ -70,7 +70,7 @@ spec:
         env:
         - name: DJANGO_ALLOWED_HOSTS
           # "*" is fine for local minikube testing; restrict this in real deployments.
-          value: "*"
+          value: "track-your-budget.de"
         - name: GOOGLE_SECRET
           valueFrom:
             secretKeyRef:
