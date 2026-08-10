@@ -69,8 +69,10 @@ spec:
         - containerPort: 8000
         env:
         - name: DJANGO_ALLOWED_HOSTS
-          # "*" is fine for local minikube testing; restrict this in real deployments.
-          value: "track-your-budget.de"
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: ALLOWED_HOSTS
         - name: GOOGLE_SECRET
           valueFrom:
             secretKeyRef:
