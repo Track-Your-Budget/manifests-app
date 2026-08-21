@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - db.yaml # Die lokale Datenbank wird nur im Dev-Cluster deployed
+
+# Azure DevOps ändert in Zukunft diese Tags via "kustomize edit set image ..."
+images:
+  - name: eduardgohl/budget-tracker-frontend
+    newTag: "dev-latest"
+  - name: eduardgohl/budget-tracker-backend
+    newTag: "dev-latest"
+
+# Hostname für Dev-Umgebung überschreiben
+patches:
+  - target:
+      kind: Ingress
+      name: budget-ingress
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: dev.track-your-budget.de
