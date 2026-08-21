@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - ../../base
-  - db.yaml # Die lokale Datenbank wird nur im Dev-Cluster deployed
+  - postgres.yaml # Die lokale Datenbank wird nur im Dev-Cluster deployed
 
 # Azure DevOps ändert in Zukunft diese Tags via "kustomize edit set image ..."
 images:
