@@ -25,18 +25,11 @@ patches:
     kind: Ingress
     name: budget-ingress
 - patch: |-
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: budget-backend
-    spec:
-      template:
-        spec:
-          containers:
-          - name: backend
-            env:
-            - name: ALLOWED_HOSTS
-              value: "dev.track-your-budget.de,localhost,127.0.0.1"
+    - op: replace
+      path: /spec/template/spec/containers/0/env/0
+      value:
+        name: ALLOWED_HOSTS
+        value: "dev.track-your-budget.de,localhost,127.0.0.1"
   target:
     kind: Deployment
     name: budget-backend
