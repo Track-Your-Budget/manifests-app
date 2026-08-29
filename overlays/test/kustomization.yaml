@@ -10,10 +10,10 @@ resources:
 images:
 - name: eduardgohl/budget-tracker-backend
   newName: eduardgohl/budget-tracker-backend
-  newTag: "33"
+  newTag: "36"
 - name: eduardgohl/budget-tracker-frontend
   newName: eduardgohl/budget-tracker-frontend
-  newTag: "33"
+  newTag: "36"
 
 # Hostname für Dev-Umgebung überschreiben
 patches:
