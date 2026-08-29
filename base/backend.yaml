@@ -27,11 +27,6 @@ spec:
             secretKeyRef:
               name: backend-secret
               key: GOOGLE_CLIENT_ID
-        - name: CALLBACK_URL
-          valueFrom:
-            secretKeyRef:
-              name: backend-secret
-              key: CALLBACK_URL
         - name: DJANGO_SECRET_KEY
           valueFrom:
             secretKeyRef:
