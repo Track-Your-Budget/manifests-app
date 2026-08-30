@@ -12,6 +12,12 @@ spec:
       labels:
         app: budget-frontend
     spec:
+      initContainers:
+       - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: GOOGLE_CLIENT_ID
       containers:
       - name: frontend
         image: eduardgohl/budget-tracker-frontend:31
