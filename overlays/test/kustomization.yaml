@@ -23,12 +23,33 @@ patches:
   target:
     kind: Ingress
     name: budget-ingress
+
+# Strategic merge, matched on the env var's name. The previous version replaced
+# env index 0, which only happened to be ALLOWED_HOSTS - inserting any variable
+# ahead of it in base would have silently overwritten the wrong one.
+# `env` beats `envFrom` for the same key, so this wins over the secret value.
+# env entries merge on `name`, so DEBUG here overrides the "False" from base.
 - patch: |-
-    - op: replace
-      path: /spec/template/spec/containers/0/env/0
-      value:
-        name: ALLOWED_HOSTS
-        value: "dev.track-your-budget.de,localhost,127.0.0.1"
-  target:
+    apiVersion: apps/v1
     kind: Deployment
-    name: budget-backend
+    metadata:
+      name: budget-backend
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backend
+            env:
+            - name: ALLOWED_HOSTS
+              value: "dev.track-your-budget.de,localhost,127.0.0.1"
+            # Test runs with debug on by choice: full tracebacks in the browser
+            # and in the logs. Base keeps "False" so prod cannot inherit this.
+            # Safe(r) only because MEDIA_ROOT is now a dedicated directory - it
+            # used to be BASE_DIR, where DEBUG=True served .env over /media/.
+            - name: DEBUG
+              value: "True"
+            # This host is plain HTTP. A Secure refresh cookie would never be
+            # sent back, so the session would die at every access-token expiry
+            # (5 min). Base keeps "True" for the HTTPS environments.
+            - name: JWT_AUTH_SECURE
+              value: "False"

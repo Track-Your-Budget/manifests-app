@@ -14,9 +14,34 @@ spec:
     spec:
       containers:
       - name: frontend
+        # Tag is a placeholder: every overlay pins the real one via `images:`
+        # in its kustomization.yaml, so this value is never what gets deployed.
         image: eduardgohl/budget-tracker-frontend:31
         ports:
         - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 3
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 20
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
         env:
         - name: VITE_GOOGLE_LINK
           valueFrom:

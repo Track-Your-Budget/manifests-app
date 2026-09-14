@@ -50,6 +50,26 @@ spec:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
           subPath: pgdata
+        readinessProbe:
+          # Wrapped in a shell on purpose: Kubernetes expands $(VAR) in a
+          # container's command/args but NOT in a probe's exec command, so the
+          # shell has to do the substitution from the container environment.
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
       volumes:
       - name: postgres-storage
         persistentVolumeClaim:
