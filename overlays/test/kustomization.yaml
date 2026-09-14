@@ -15,7 +15,6 @@ images:
   newName: eduardgohl/budget-tracker-frontend
   newTag: "37"
 
-# Hostname für Dev-Umgebung überschreiben
 patches:
 - patch: |-
     - op: replace

@@ -17,21 +17,16 @@ spec:
         image: eduardgohl/budget-tracker-backend:31
         command: ["python", "manage.py", "migrate", "--noinput"]
         env:
-        - name: GOOGLE_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: backend-secret
-              key: GOOGLE_SECRET
-        - name: GOOGLE_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: backend-secret
-              key: GOOGLE_CLIENT_ID
         - name: DJANGO_SECRET_KEY
           valueFrom:
             secretKeyRef:
               name: backend-secret
               key: DJANGO_SECRET_KEY
+        - name: FRONTEND_URL
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: FRONTEND_URL
         - name: POSTGRES_DB
           valueFrom:
             secretKeyRef:
@@ -68,21 +63,16 @@ spec:
             secretKeyRef:
               name: backend-secret
               key: ALLOWED_HOSTS
-        - name: GOOGLE_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: backend-secret
-              key: GOOGLE_SECRET
-        - name: GOOGLE_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: backend-secret
-              key: GOOGLE_CLIENT_ID
         - name: DJANGO_SECRET_KEY
           valueFrom:
             secretKeyRef:
               name: backend-secret
               key: DJANGO_SECRET_KEY
+        - name: FRONTEND_URL
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: FRONTEND_URL
         - name: POSTGRES_DB
           valueFrom:
             secretKeyRef:
