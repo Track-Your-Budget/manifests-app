@@ -17,6 +17,22 @@ spec:
         image: eduardgohl/budget-tracker-frontend:31
         ports:
         - containerPort: 80
+        env:
+        - name: VITE_GOOGLE_LINK
+          valueFrom:
+            secretKeyRef:
+              name: frontend-secret
+              key: VITE_GOOGLE_LINK
+        - name: VITE_GITHUB_LINK
+          valueFrom:
+            secretKeyRef:
+              name: frontend-secret
+              key: VITE_GITHUB_LINK
+        - name: VITE_MICROSOFT_LINK
+          valueFrom:
+            secretKeyRef:
+              name: frontend-secret
+              key: VITE_MICROSOFT_LINK
 ---
 apiVersion: v1
 kind: Service
