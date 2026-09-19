@@ -2,11 +2,13 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../../base
+- ../../base
 
 # Hier trägt Azure DevOps später die Prod-Tags ein
 images:
-  - name: eduardgohl/budget-tracker-frontend
-    newTag: "30"
-  - name: eduardgohl/budget-tracker-backend
-    newTag: "30"
+- name: eduardgohl/budget-tracker-backend
+  newName: eduardgohl/budget-tracker-backend
+  newTag: "44"
+- name: eduardgohl/budget-tracker-frontend
+  newName: eduardgohl/budget-tracker-frontend
+  newTag: "44"
