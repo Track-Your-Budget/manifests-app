@@ -11,6 +11,11 @@
 #   postgresql.conf  listen_addresses = '*'
 #   pg_hba.conf      host  <db>  <user>  10.42.0.0/16  scram-sha-256
 #   firewall         5432 open for 10.42.0.0/16 only
+#
+# Argo CD: its default resource.exclusions (argocd-cm) skip EndpointSlice.
+# That block is removed on the dev server; if it ever comes back, Argo CD
+# applies the Service but not the slice, and the backend gets "Connection
+# refused" from "postgres". See README, section "Prod database".
 apiVersion: v1
 kind: Service
 metadata:
