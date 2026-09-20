@@ -6,23 +6,37 @@ kind: Kustomization
 # default; prod must do the same.
 namespace: default
 
+# Host Postgres exposed under the in-cluster name "postgres" (see file).
 resources:
 - ../../base
-# Host Postgres exposed under the in-cluster name "postgres" (see file).
 - postgres.yaml
 
 # Azure DevOps writes the prod tags here via "kustomize edit set image ...".
 images:
 - name: eduardgohl/budget-tracker-backend
   newName: eduardgohl/budget-tracker-backend
-  newTag: "44"
+  newTag: "50"
 - name: eduardgohl/budget-tracker-frontend
   newName: eduardgohl/budget-tracker-frontend
-  newTag: "44"
+  newTag: "50"
 
-patches:
 # Strategic merge on the backend container. env entries merge by name, so
 # these add to / override what base sets without touching the rest.
+            # Django answers 400 for any Host not listed here. "localhost"
+            # stays in for the kubelet probes (see base/backend.yaml).
+            # Prod is meant to be served over HTTPS (Cloudflare), so the
+            # refresh cookie carries the Secure flag. If you test prod over
+            # plain HTTP before Cloudflare is in place, set this to "False"
+            # temporarily, otherwise the browser drops the cookie and every
+            # session dies when the 5-minute access token expires.
+            # Django answers 400 for any Host not listed here. "localhost"
+            # stays in for the kubelet probes (see base/backend.yaml).
+            # Prod is meant to be served over HTTPS (Cloudflare), so the
+            # refresh cookie carries the Secure flag. If you test prod over
+            # plain HTTP before Cloudflare is in place, set this to "False"
+            # temporarily, otherwise the browser drops the cookie and every
+            # session dies when the 5-minute access token expires.
+patches:
 - patch: |-
     apiVersion: apps/v1
     kind: Deployment
