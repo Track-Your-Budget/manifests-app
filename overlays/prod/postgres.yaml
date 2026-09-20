@@ -1,0 +1,44 @@
+# Prod does not run Postgres in the cluster. The database is the PostgreSQL
+# server installed directly on the k3s host, reachable from pods through the
+# cni0 bridge address 10.42.0.1 (the host as seen from the pod network).
+#
+# A Service without a selector plus a hand-written EndpointSlice gives that
+# host address a stable in-cluster DNS name, "postgres". The backend then uses
+# POSTGRES_HOST=postgres in prod exactly as it does in test, where the same
+# name points at the budget-db Deployment (overlays/test/postgres.yaml).
+#
+# Prerequisites on the host (already done by hand, not managed here):
+#   postgresql.conf  listen_addresses = '*'
+#   pg_hba.conf      host  <db>  <user>  10.42.0.0/16  scram-sha-256
+#   firewall         5432 open for 10.42.0.0/16 only
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  # No selector on purpose: Kubernetes must not try to manage the endpoints.
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432
+    protocol: TCP
+---
+# EndpointSlice replaces the Endpoints API, which is deprecated since
+# Kubernetes 1.33. The service-name label is what ties it to the Service
+# above; the port name must match the Service's port name.
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: postgres-host
+  labels:
+    kubernetes.io/service-name: postgres
+addressType: IPv4
+ports:
+- name: postgres
+  port: 5432
+  protocol: TCP
+endpoints:
+- addresses:
+  - "10.42.0.1"
+  conditions:
+    ready: true
