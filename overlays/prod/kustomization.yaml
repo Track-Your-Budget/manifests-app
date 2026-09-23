@@ -1,17 +1,17 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Argo CD refuses to sync resources that have no namespace ("Namespace for
-# ... is missing"), and base/ deliberately sets none. Test already pins
-# default; prod must do the same.
-namespace: default
-
-# Host Postgres exposed under the in-cluster name "postgres" (see file).
+# Prod = the application (app/, pinned to namespace default) + the Cloudflare
+# Tunnel connector that exposes it (cloudflared.yaml, namespace cloudflare).
+# No `namespace:` at this level on purpose: it would override the namespace
+# of every resource below, and the two halves need different ones.
 resources:
-- ../../base
-- postgres.yaml
+- app
+- cloudflared.yaml
 
 # Azure DevOps writes the prod tags here via "kustomize edit set image ...".
+# The image transformer applies to all resources this directory emits, so
+# the Deployments coming from app/ pick these tags up.
 images:
 - name: eduardgohl/budget-tracker-backend
   newName: eduardgohl/budget-tracker-backend
@@ -19,45 +19,3 @@ images:
 - name: eduardgohl/budget-tracker-frontend
   newName: eduardgohl/budget-tracker-frontend
   newTag: "50"
-
-# Strategic merge on the backend container. env entries merge by name, so
-# these add to / override what base sets without touching the rest.
-            # Django answers 400 for any Host not listed here. "localhost"
-            # stays in for the kubelet probes (see base/backend.yaml).
-            # Prod is meant to be served over HTTPS (Cloudflare), so the
-            # refresh cookie carries the Secure flag. If you test prod over
-            # plain HTTP before Cloudflare is in place, set this to "False"
-            # temporarily, otherwise the browser drops the cookie and every
-            # session dies when the 5-minute access token expires.
-            # Django answers 400 for any Host not listed here. "localhost"
-            # stays in for the kubelet probes (see base/backend.yaml).
-            # Prod is meant to be served over HTTPS (Cloudflare), so the
-            # refresh cookie carries the Secure flag. If you test prod over
-            # plain HTTP before Cloudflare is in place, set this to "False"
-            # temporarily, otherwise the browser drops the cookie and every
-            # session dies when the 5-minute access token expires.
-patches:
-- patch: |-
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: budget-backend
-    spec:
-      template:
-        spec:
-          containers:
-          - name: backend
-            env:
-            # Django answers 400 for any Host not listed here. "localhost"
-            # stays in for the kubelet probes (see base/backend.yaml).
-            - name: ALLOWED_HOSTS
-              value: "track-your-budget.de,localhost,127.0.0.1"
-            # Prod is meant to be served over HTTPS (Cloudflare), so the
-            # refresh cookie carries the Secure flag. If you test prod over
-            # plain HTTP before Cloudflare is in place, set this to "False"
-            # temporarily, otherwise the browser drops the cookie and every
-            # session dies when the 5-minute access token expires.
-            - name: JWT_AUTH_SECURE
-              value: "True"
-            - name: DEBUG
-              value: "False"
