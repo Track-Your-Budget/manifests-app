@@ -1,0 +1,58 @@
+# Cloudflare Tunnel connector. This is the only way traffic reaches prod: the
+# server sits behind a university network with no inbound ports, so instead
+# of exposing Traefik, cloudflared dials out to Cloudflare and Cloudflare
+# forwards requests for track-your-budget.de back through that connection.
+#
+#   browser --HTTPS--> Cloudflare edge --tunnel--> cloudflared (this pod)
+#           --HTTP--> traefik.kube-system.svc.cluster.local:80
+#           --Ingress host match--> frontend-service
+#
+# The public hostname -> service mapping is NOT in this file. It is remote
+# configuration in the Cloudflare dashboard (Zero Trust > Networks > Tunnels >
+# <tunnel> > Public Hostname): track-your-budget.de -> 
+# http://traefik.kube-system.svc.cluster.local:80. cloudflared fetches it at
+# start-up using the token.
+#
+# The token comes from Secret "cloudflared-token" in this namespace, applied
+# by hand from secrets/cloudflared-secret.template.yaml. It identifies the
+# tunnel, so a token from a deleted tunnel fails with "Tunnel not found".
+#
+# Prerequisite on the host: CoreDNS must be able to resolve public names.
+# k3s on a systemd-resolved host falls back to 8.8.8.8, which the university
+# network blocks; /etc/rancher/k3s/config.yaml fixes that (see README,
+# section "Prod exposure: Cloudflare Tunnel").
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloudflare
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: cloudflare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      containers:
+      - name: cloudflared
+        image: cloudflare/cloudflared:latest
+        args:
+        - tunnel
+        - --no-autoupdate
+        - run
+        - --token
+        - $(TUNNEL_TOKEN)
+        env:
+        - name: TUNNEL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: cloudflared-token
+              key: token

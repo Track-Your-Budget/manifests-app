@@ -1,0 +1,47 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# The application half of the prod overlay. It lives one level below
+# overlays/prod because the `namespace:` field here would otherwise be forced
+# onto every resource in the overlay, including cloudflared, which must stay
+# in its own namespace (see ../cloudflared.yaml). Image tags are NOT set here:
+# the pipeline writes them into ../kustomization.yaml, and kustomize applies
+# them to everything that directory emits, this sub-kustomization included.
+
+# Argo CD refuses to sync resources that have no namespace ("Namespace for
+# ... is missing"), and base/ deliberately sets none. Test already pins
+# default; prod must do the same.
+namespace: default
+
+# Host Postgres exposed under the in-cluster name "postgres" (see file).
+resources:
+- ../../../base
+- postgres.yaml
+
+# Strategic merge on the backend container. env entries merge by name, so
+# these add to / override what base sets without touching the rest.
+patches:
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: budget-backend
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backend
+            env:
+            # Django answers 400 for any Host not listed here. "localhost"
+            # stays in for the kubelet probes (see base/backend.yaml).
+            - name: ALLOWED_HOSTS
+              value: "track-your-budget.de,localhost,127.0.0.1"
+            # Prod is served over HTTPS (Cloudflare Tunnel terminates TLS at
+            # the edge), so the refresh cookie carries the Secure flag. If you
+            # test prod over plain HTTP without Cloudflare, set this to "False"
+            # temporarily, otherwise the browser drops the cookie and every
+            # session dies when the 5-minute access token expires.
+            - name: JWT_AUTH_SECURE
+              value: "True"
+            - name: DEBUG
+              value: "False"
