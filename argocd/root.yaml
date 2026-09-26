@@ -1,0 +1,29 @@
+# App-of-apps: the one Application that is applied by hand, once, at bootstrap.
+# It watches argocd/apps/ in this repo and creates / updates / prunes the
+# per-environment Applications from there, so adding an environment or
+# changing the prod API address is a commit, not a kubectl or UI action.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: budget-apps
+  namespace: argocd
+  finalizers:
+    # Deleting the root Application removes the child Applications (and with
+    # them the workloads). Without this the children would be orphaned.
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://dev.azure.com/edodevops0169/TackYourBudget/_git/app-manifests
+    targetRevision: HEAD
+    path: argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+      # The child Applications are pure configuration; a UI edit to one of
+      # them should not survive, Git is the place to change them.
+      selfHeal: true

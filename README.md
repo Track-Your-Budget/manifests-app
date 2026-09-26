@@ -1,9 +1,13 @@
 # app-manifests
 
-Kubernetes manifests for [Track Your Budget](https://github.com/Eduard1999Gol/Track-Your-Budget),
+Kubernetes manifests for [Track Your Budget](https://github.com/Track-Your-Budget/budget-tracker-app),
 managed with Kustomize and deployed by Argo CD. This repository is the single
-source of truth for what runs in the test and prod clusters: nothing is
-`kubectl apply`ed by hand except the three Secrets described below.
+source of truth for what runs in the test and prod clusters, including the
+Argo CD `Application` objects themselves (`argocd/`). The only things applied
+by hand are the three Secrets described below and the one-time Argo CD
+bootstrap (see [Argo CD](#argo-cd)).
+
+Developed on Azure DevOps and mirrored to GitHub, like the app repository.
 
 ---
 
@@ -45,8 +49,21 @@ flowchart LR
 | `test` | `overlays/test` | dev server, same cluster as Argo CD | `dev.track-your-budget.de` (HTTP) | `budget-app-test` |
 | `main` | `overlays/prod` | prod server (k3s, single node) | `track-your-budget.de` (HTTPS, via Cloudflare Tunnel) | `budget-app-production` |
 
-The pipeline only ever touches the `images:` block of an overlay. Everything
-else in this repo is edited by hand and reviewed like code.
+`dev.track-your-budget.de` is not registered in public DNS. The test Ingress is
+still configured for that host, but on a local/dev machine you must resolve it to
+ the node IP (or add an entry in `/etc/hosts`) before the browser can reach it.
+
+Example for a local machine:
+
+```bash
+# replace with the dev server's actual IP
+sudo sh -c 'echo "192.168.1.50 dev.track-your-budget.de" >> /etc/hosts'
+```
+
+The pipeline only ever touches the `images:` block of an overlay and commits
+to `main`, which is the branch both Argo CD Applications track. Everything
+else in this repo is edited by hand and reviewed like code. Other branches in
+this repo are scratch space and are not deployed.
 
 ---
 
@@ -54,6 +71,13 @@ else in this repo is edited by hand and reviewed like code.
 
 ```
 .
+├── argocd/
+│   ├── root.yaml               App-of-apps: applied once by hand, then manages apps/
+│   ├── apps/
+│   │   ├── budget-app-test.yaml        Application → overlays/test, in-cluster
+│   │   └── budget-app-production.yaml  Application → overlays/prod, prod cluster
+│   ├── argocd-cm.patch.yaml    Clears resource.exclusions (EndpointSlice tracking)
+│   └── bootstrap.sh            Install Argo CD, apply the patch, apply root.yaml
 ├── base/
 │   ├── backend.yaml        Deployment (migrate init container + gunicorn), Service "backend", media PVC
 │   ├── frontend.yaml       Deployment (nginx serving the SPA, proxies /api to "backend"), Service
@@ -126,7 +150,7 @@ Requirements outside this repo:
 
 ### Prod exposure: Cloudflare Tunnel
 
-![Cloudflare Tunnel request flow: browser → Cloudflare edge → cloudflared connector → your service](handshake.eh3a-Ml1.png)
+![Cloudflare Tunnel request flow: browser → Cloudflare edge → cloudflared connector → your service](docs/cloudflare-tunnel.png)
 
 The prod server sits in a home private network, so
 Traefik is never reached directly. `overlays/prod/cloudflared.yaml` runs a
@@ -222,12 +246,41 @@ overlay patches, not in the Secret.
 ## Argo CD
 
 Argo CD runs on the dev server and manages both environments. The Application
-objects are created by hand and are not stored in this repo.
+objects live in this repo under `argocd/apps/` and are themselves managed by
+Argo CD through the app-of-apps pattern: `argocd/root.yaml` is the one
+Application applied by hand, it watches `argocd/apps/` and creates, updates
+and prunes the per-environment Applications from there.
 
-| Application | Source path | Destination | Sync policy |
-| --- | --- | --- | --- |
-| `budget-app-test` | `overlays/test` | in-cluster, `default` | automated, prune |
-| `budget-app-production` | `overlays/prod` | `https://<prod-ip>:6443`, `default` | automated, prune |
+| Application | Defined in | Source path | Destination | Sync policy |
+| --- | --- | --- | --- | --- |
+| `budget-apps` (root) | `argocd/root.yaml`, applied by hand | `argocd/apps` | in-cluster, `argocd` | automated, prune, selfHeal |
+| `budget-app-test` | `argocd/apps/` | `overlays/test` | in-cluster, `default` | automated, prune |
+| `budget-app-production` | `argocd/apps/` | `overlays/prod` | `https://<prod-ip>:6443`, `default` | automated, prune |
+
+### Bootstrap (once per dev server)
+
+`argocd/bootstrap.sh` installs Argo CD at the pinned version, applies the
+`argocd-cm` patch and the root Application. Two steps need credentials and are
+therefore printed by the script instead of executed:
+
+```bash
+# Repository credential (Azure DevOps PAT with "Code: Read"); Argo CD stores it
+# as a Secret in namespace argocd, never in Git.
+argocd repo add https://dev.azure.com/edodevops0169/TackYourBudget/_git/app-manifests \
+  --username azure --password <PAT>
+
+# Prod cluster, from a machine that has a kubeconfig context for it. This
+# creates the cluster Secret (argocd.argoproj.io/secret-type=cluster).
+argocd cluster add <prod-context> --name prod
+```
+
+The Argo CD version is pinned in `bootstrap.sh` (`ARGOCD_VERSION`); bump it
+there when upgrading and re-run the script, which also re-applies the
+`argocd-cm` patch that a fresh `install.yaml` would otherwise undo.
+
+What is deliberately *not* in Git: the repository credential, the prod cluster
+Secret (it contains the prod API's bearer token) and the initial admin
+password.
 
 `budget-app-production` also creates the cluster-scoped Namespace `cloudflare`
 and the `cloudflared` Deployment inside it, even though its destination
@@ -245,9 +298,34 @@ argocd app sync budget-app-production
 ```
 
 The prod server gets its IP by DHCP. When it changes, update `server` in the
-cluster Secret (`kubectl -n argocd get secret -l argocd.argoproj.io/secret-type=cluster`)
-and `spec.destination.server` in the Application. The k3s API certificate
-already includes the new IP after a k3s restart.
+cluster Secret (`kubectl -n argocd get secret -l argocd.argoproj.io/secret-type=cluster`,
+or re-run `argocd cluster add`) and `spec.destination.server` in
+`argocd/apps/budget-app-production.yaml`; the root Application rolls the
+latter out on the next commit. The k3s API certificate already includes the
+new IP after a k3s restart.
+
+---
+
+## Known operational gaps
+
+Things that are not solved yet and that you should know before relying on
+either environment:
+
+- **No database backup.** Neither the in-cluster Postgres (test) nor the host
+  Postgres (prod) is backed up automatically. Planned: a `CronJob` running
+  `pg_dump` to off-cluster storage, plus a documented restore test.
+- **Prod egress depends on a captive portal.** The prod server's network
+  session expires periodically; when it does, only TCP 80 works and the
+  Cloudflare Tunnel dies with QUIC dial timeouts until someone logs in again.
+  There is no automatic re-login and no uptime monitor yet.
+- **Argo CD itself is installed by hand** (`argocd/bootstrap.sh`), and the
+  repository credential and prod cluster Secret have to be re-created from a
+  password manager when the dev server is rebuilt.
+- **Secrets are applied by hand** from the templates; there is no Sealed
+  Secrets / SOPS setup, so a fresh cluster needs a person with the values.
+- **`cloudflared` runs the `latest` tag** and has no resource limits.
+- **Test is plain HTTP** and `dev.track-your-budget.de` is not in public DNS
+  (see above).
 
 ---
 
@@ -268,3 +346,9 @@ already includes the new IP after a k3s restart.
 | Browser: "server not found" for `track-your-budget.de` | DNS: domain not registered, or not on Cloudflare's nameservers yet. |
 | Browser: Cloudflare error 1033 | Tunnel has no public hostname route for `track-your-budget.de`, or cloudflared is not connected. |
 | Browser: Cloudflare error 502 / 404 from Traefik | Route points at the wrong service, or the Ingress host does not match. Check `http://traefik.kube-system.svc.cluster.local:80` in the route and the Ingress. |
+
+---
+
+## License
+
+[MIT](LICENSE)

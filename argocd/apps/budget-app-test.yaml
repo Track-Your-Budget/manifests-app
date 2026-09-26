@@ -1,0 +1,23 @@
+# Test environment: overlays/test on the same cluster Argo CD runs in.
+# Managed by the root Application in ../root.yaml; edit here, not in the UI.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: budget-app-test
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://dev.azure.com/edodevops0169/TackYourBudget/_git/app-manifests
+    targetRevision: HEAD
+    path: overlays/test
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+      # Off on purpose: a hand edit in the cluster (debugging, a hotfix) stays
+      # until the next Git commit instead of being reverted within minutes.
+      selfHeal: false
