@@ -1,0 +1,29 @@
+# Production: overlays/prod on the remote prod cluster.
+# Managed by the root Application in ../root.yaml; edit here, not in the UI.
+#
+# destination.server is the prod k3s API as registered with
+# `argocd cluster add` (see README, "Argo CD"). The prod server gets its IP by
+# DHCP: when it changes, update it here AND in the cluster Secret in namespace
+# argocd (argocd.argoproj.io/secret-type=cluster); the two must match.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: budget-app-production
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://dev.azure.com/edodevops0169/TackYourBudget/_git/app-manifests
+    targetRevision: HEAD
+    path: overlays/prod
+  destination:
+    server: https://134.93.77.17:6443
+    # The app half of the overlay pins namespace default itself; cloudflared
+    # carries its own namespace. Both are allowed because project "default"
+    # permits every namespace and cluster-scoped resources.
+    namespace: default
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+      selfHeal: false

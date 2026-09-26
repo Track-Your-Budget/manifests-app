@@ -1,0 +1,12 @@
+# Strategic-merge patch for the argocd-cm ConfigMap shipped with the Argo CD
+# install manifest. Applied by bootstrap.sh:
+#   kubectl -n argocd patch cm argocd-cm --patch-file argocd/argocd-cm.patch.yaml
+#
+# The stock install excludes Endpoints and EndpointSlice from tracking.
+# overlays/prod/app/postgres.yaml relies on a hand-written EndpointSlice to
+# reach the host Postgres; with the exclusion in place Argo CD applies the
+# Service but silently skips the slice and the backend gets "Connection
+# refused". Clearing the list makes Argo CD track them. Re-apply after every
+# Argo CD upgrade, because a fresh install.yaml brings the default back.
+data:
+  resource.exclusions: ""
