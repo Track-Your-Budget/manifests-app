@@ -21,76 +21,13 @@ images:
 # ahead of it in base would have silently overwritten the wrong one.
 # `env` beats `envFrom` for the same key, so this wins over the secret value.
 # env entries merge on `name`, so DEBUG here overrides the "False" from base.
-            # Test runs with debug on by choice: full tracebacks in the browser
-            # and in the logs. Base keeps "False" so prod cannot inherit this.
-            # Safe(r) only because MEDIA_ROOT is now a dedicated directory - it
-            # used to be BASE_DIR, where DEBUG=True served .env over /media/.
-            # This host is plain HTTP. A Secure refresh cookie would never be
-            # sent back, so the session would die at every access-token expiry
-            # (5 min). Base keeps "True" for the HTTPS environments.
-            # Test runs with debug on by choice: full tracebacks in the browser
-            # and in the logs. Base keeps "False" so prod cannot inherit this.
-            # Safe(r) only because MEDIA_ROOT is now a dedicated directory - it
-            # used to be BASE_DIR, where DEBUG=True served .env over /media/.
-            # This host is plain HTTP. A Secure refresh cookie would never be
-            # sent back, so the session would die at every access-token expiry
-            # (5 min). Base keeps "True" for the HTTPS environments.
-            # Test runs with debug on by choice: full tracebacks in the browser
-            # and in the logs. Base keeps "False" so prod cannot inherit this.
-            # Safe(r) only because MEDIA_ROOT is now a dedicated directory - it
-            # used to be BASE_DIR, where DEBUG=True served .env over /media/.
-            # This host is plain HTTP. A Secure refresh cookie would never be
-            # sent back, so the session would die at every access-token expiry
-            # (5 min). Base keeps "True" for the HTTPS environments.
-            # Test runs with debug on by choice: full tracebacks in the browser
-            # and in the logs. Base keeps "False" so prod cannot inherit this.
-            # Safe(r) only because MEDIA_ROOT is now a dedicated directory - it
-            # used to be BASE_DIR, where DEBUG=True served .env over /media/.
-            # This host is plain HTTP. A Secure refresh cookie would never be
-            # sent back, so the session would die at every access-token expiry
-            # (5 min). Base keeps "True" for the HTTPS environments.
-            # Test runs with debug on by choice: full tracebacks in the browser
-            # and in the logs. Base keeps "False" so prod cannot inherit this.
-            # Safe(r) only because MEDIA_ROOT is now a dedicated directory - it
-            # used to be BASE_DIR, where DEBUG=True served .env over /media/.
-            # This host is plain HTTP. A Secure refresh cookie would never be
-            # sent back, so the session would die at every access-token expiry
-            # (5 min). Base keeps "True" for the HTTPS environments.
-            # Test runs with debug on by choice: full tracebacks in the browser
-            # and in the logs. Base keeps "False" so prod cannot inherit this.
-            # Safe(r) only because MEDIA_ROOT is now a dedicated directory - it
-            # used to be BASE_DIR, where DEBUG=True served .env over /media/.
-            # This host is plain HTTP. A Secure refresh cookie would never be
-            # sent back, so the session would die at every access-token expiry
-            # (5 min). Base keeps "True" for the HTTPS environments.
-            # Test runs with debug on by choice: full tracebacks in the browser
-            # and in the logs. Base keeps "False" so prod cannot inherit this.
-            # Safe(r) only because MEDIA_ROOT is now a dedicated directory - it
-            # used to be BASE_DIR, where DEBUG=True served .env over /media/.
-            # This host is plain HTTP. A Secure refresh cookie would never be
-            # sent back, so the session would die at every access-token expiry
-            # (5 min). Base keeps "True" for the HTTPS environments.
-            # Test runs with debug on by choice: full tracebacks in the browser
-            # and in the logs. Base keeps "False" so prod cannot inherit this.
-            # Safe(r) only because MEDIA_ROOT is now a dedicated directory - it
-            # used to be BASE_DIR, where DEBUG=True served .env over /media/.
-            # This host is plain HTTP. A Secure refresh cookie would never be
-            # sent back, so the session would die at every access-token expiry
-            # (5 min). Base keeps "True" for the HTTPS environments.
-            # Test runs with debug on by choice: full tracebacks in the browser
-            # and in the logs. Base keeps "False" so prod cannot inherit this.
-            # Safe(r) only because MEDIA_ROOT is now a dedicated directory - it
-            # used to be BASE_DIR, where DEBUG=True served .env over /media/.
-            # This host is plain HTTP. A Secure refresh cookie would never be
-            # sent back, so the session would die at every access-token expiry
-            # (5 min). Base keeps "True" for the HTTPS environments.
-            # Test runs with debug on by choice: full tracebacks in the browser
-            # and in the logs. Base keeps "False" so prod cannot inherit this.
-            # Safe(r) only because MEDIA_ROOT is now a dedicated directory - it
-            # used to be BASE_DIR, where DEBUG=True served .env over /media/.
-            # This host is plain HTTP. A Secure refresh cookie would never be
-            # sent back, so the session would die at every access-token expiry
-            # (5 min). Base keeps "True" for the HTTPS environments.
+# Test runs with debug on by choice: full tracebacks in the browser and logs.
+# Base keeps "False" so prod cannot inherit this.
+# Safe(r) only because MEDIA_ROOT is now a dedicated directory - it used to be
+# BASE_DIR, where DEBUG=True served .env over /media/.
+# This host is plain HTTP. A Secure refresh cookie would never be sent back, so
+# the session would die at every access-token expiry (5 min). Base keeps
+# "True" for the HTTPS environments.
 patches:
 - patch: |-
     - op: replace
